@@ -1,0 +1,54 @@
+# Load necessary libraries
+library(tidyverse)
+library(stringr)
+
+# Load cleaned dataset
+amazon_data <- read.csv("C:/Users/yaswa/Documents/New folder/RESUME/amazon.csv", stringsAsFactors = FALSE)
+
+# Step 1: Clean and Convert Data Types
+# Remove currency symbols and convert to numeric
+amazon_data$discounted_price <- as.numeric(gsub("[^0-9]", "", amazon_data$discounted_price))
+amazon_data$actual_price <- as.numeric(gsub("[^0-9]", "", amazon_data$actual_price))
+amazon_data$discount_percentage <- as.numeric(gsub("%", "", amazon_data$discount_percentage))
+amazon_data$rating <- as.numeric(amazon_data$rating)
+amazon_data$rating_count <- as.numeric(gsub(",", "", amazon_data$rating_count))  # Remove commas in review counts
+
+# Step 2: Remove Missing Values
+amazon_data <- amazon_data %>% drop_na(discount_percentage, rating, rating_count)
+
+# Step 3: Correlation Between Discount Percentage and Ratings
+ggplot(amazon_data, aes(x=discount_percentage, y=rating)) +
+  geom_point(alpha=0.5, color="blue") +
+  geom_smooth(method="lm", color="red") +
+  labs(title="Discount Percentage vs. Product Ratings", x="Discount Percentage", y="Average Rating") +
+  theme_minimal()
+
+# Step 4: Discount Percentage vs. Popularity (Review Count)
+ggplot(amazon_data, aes(x=discount_percentage, y=rating_count)) +
+  geom_point(alpha=0.5, color="green") +
+  geom_smooth(method="lm", color="red") +
+  labs(title="Discount Percentage vs. Review Count", x="Discount Percentage", y="Number of Reviews") +
+  theme_minimal()
+
+# Step 5: Improved Visualization for Top 10 Categories with Highest Discounts
+category_discount <- amazon_data %>%
+  group_by(category) %>%
+  summarise(avg_discount = mean(discount_percentage, na.rm = TRUE)) %>%
+  arrange(desc(avg_discount)) %>%
+  slice_head(n = 10)  # Show only top 10 categories
+
+# Simplify category names by extracting the last part after the last "|"
+category_discount$category <- sapply(strsplit(category_discount$category, "\\|"), function(x) tail(x, 1))
+
+ggplot(category_discount, aes(x=reorder(category, avg_discount), y=avg_discount, fill=category)) +
+  geom_bar(stat="identity") +
+  coord_flip() +
+  labs(title="Top 10 Categories by Average Discount", x="Product Category", y="Average Discount Percentage") +
+  theme_minimal() +
+  theme(
+    text = element_text(size = 12),  # Adjust overall text size
+    axis.text.y = element_text(size = 10),  # Increase y-axis label size
+    plot.title = element_text(hjust = 0.5),  # Center the title
+    legend.position = "none"
+  ) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 20))  # Improved wrapping width
