@@ -1,0 +1,47 @@
+# Load necessary libraries
+library(tidyverse)
+library(lubridate)
+
+# Step 1: Extract the ZIP file
+unzip("C:/Users/yaswa/Downloads/archive.zip", exdir = "C:/Users/yaswa/Downloads/extracted_data")
+
+# Step 2: Load the extracted CSV file (daily activity data)
+daily_activity <- read.csv("C:/Users/yaswa/Documents/New folder/RESUME/dailyActivity_merged.csv", stringsAsFactors = FALSE)
+
+# Step 3: Print column names to identify the correct date column
+print(colnames(daily_activity))
+
+  # Step 5: Convert to Date format
+daily_activity$ActivityDate <- as.Date(daily_activity$ActivityDate, format="%m/%d/%Y")
+
+# Debugging: Check if conversion was successful
+print(head(daily_activity$ActivityDate))
+
+# Step 6: Summary statistics of key columns
+summary(daily_activity)
+
+# Step 7: Plot Daily Steps vs. Calories Burned
+ggplot(daily_activity, aes(x=TotalSteps, y=Calories)) +
+  geom_point(alpha=0.5, color="blue") +
+  geom_smooth(method="lm", color="red") +
+  labs(title="Daily Steps vs. Calories Burned", x="Total Steps", y="Calories Burned") +
+  theme_minimal()
+
+# Step 8: Analyze Sleep Data (if available)
+sleep_data <- read.csv("C:/Users/yaswa/Documents/New folder/RESUME/sleepDay_merged.csv", stringsAsFactors = FALSE)
+
+# Convert sleep date column to Date format
+sleep_data$SleepDay <- as.Date(sleep_data$SleepDay, format="%m/%d/%Y")
+
+# Plot Sleep Trends
+avg_sleep <- mean(sleep_data$TotalMinutesAsleep, na.rm=TRUE)  # Calculate average sleep
+
+ggplot(sleep_data, aes(x=SleepDay, y=TotalMinutesAsleep)) +
+  geom_line(color="purple", linewidth=1, alpha=0.6) +
+  geom_smooth(method="loess", color="red", linetype="dashed", se=FALSE) +
+  geom_hline(yintercept=avg_sleep, linetype="dotted", color="blue") +  # Average sleep line
+  annotate("text", x=min(sleep_data$SleepDay), y=avg_sleep + 20, 
+           label=paste("Avg Sleep:", round(avg_sleep, 1), "mins"), color="blue", hjust=0) +
+  labs(title="Sleep Duration Trends (Final Version)", x="Date", y="Minutes Asleep") +
+  scale_x_date(date_breaks="5 days", date_labels="%b %d") +
+  theme_minimal()
